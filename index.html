@@ -1,0 +1,2259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loop Engineering 完全指南 — 从概念到实践</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #faf9f7;
+            --bg-secondary: #f0ede8;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a5a;
+            --text-muted: #8a8a8a;
+            --accent: #c75b39;
+            --accent-light: #e8a88a;
+            --accent-bg: #fdf3ef;
+            --border: #e5e2dc;
+            --border-light: #f0ede8;
+            --code-bg: #f5f2ed;
+            --success: #4a7c59;
+            --warning: #c9a227;
+            --shadow: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-hover: 0 4px 16px rgba(0,0,0,0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            font-size: 16px;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: rgba(250,249,247,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 0 24px;
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+        }
+        .nav-logo {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-logo svg { width: 24px; height: 24px; }
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--accent); }
+        .nav-progress {
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            padding: 120px 24px 80px;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-bg);
+            color: var(--accent);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+        .hero h1 span { color: var(--accent); }
+        .hero-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-weight: 300;
+        }
+        .hero-desc {
+            font-size: 16px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+        .hero-cta {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #b54d2e;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+            transform: translateY(-1px);
+        }
+
+        /* ===== SECTIONS ===== */
+        .section {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+        .section-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.01em;
+        }
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        /* ===== LONG ARTICLE ===== */
+        .article {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 48px;
+            box-shadow: var(--shadow);
+        }
+        .article h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 40px 0 16px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border-light);
+        }
+        .article h2:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .article h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 28px 0 12px;
+        }
+        .article p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+        .article p strong { color: var(--text-primary); }
+        .article ul, .article ol {
+            margin: 16px 0;
+            padding-left: 24px;
+            color: var(--text-secondary);
+        }
+        .article li { margin-bottom: 8px; }
+        .article blockquote {
+            border-left: 3px solid var(--accent);
+            padding-left: 20px;
+            margin: 24px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .article blockquote cite {
+            display: block;
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-style: normal;
+        }
+
+        /* ===== ACCORDION / EXPANDABLE ===== */
+        .accordion {
+            margin: 16px 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+        .accordion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            cursor: pointer;
+            background: var(--bg-card);
+            transition: background 0.2s;
+        }
+        .accordion-header:hover { background: var(--bg-secondary); }
+        .accordion-header h4 {
+            font-size: 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .accordion-icon {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s;
+            color: var(--text-muted);
+        }
+        .accordion.open .accordion-icon { transform: rotate(180deg); }
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+        .accordion.open .accordion-body {
+            max-height: 2000px;
+        }
+        .accordion-content {
+            padding: 0 20px 20px;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+        .accordion-content p { margin-bottom: 12px; }
+
+        /* ===== INTERACTIVE FLOWCHART ===== */
+        .flowchart {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 40px;
+            margin: 32px 0;
+            box-shadow: var(--shadow);
+        }
+        .flowchart-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+        .flow-node {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px 24px;
+            min-width: 220px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .flow-node:hover {
+            border-color: var(--accent);
+            transform: scale(1.02);
+            box-shadow: var(--shadow-hover);
+        }
+        .flow-node.active {
+            border-color: var(--accent);
+            background: var(--accent-bg);
+        }
+        .flow-node .node-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .flow-node .node-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .flow-arrow {
+            width: 2px;
+            height: 32px;
+            background: var(--border);
+            position: relative;
+        }
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid var(--border);
+        }
+        .flow-arrow.active {
+            background: var(--accent);
+        }
+        .flow-arrow.active::after {
+            border-top-color: var(--accent);
+        }
+        .flow-loop-arrow {
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--accent);
+            border-left: none;
+            border-bottom: none;
+            border-radius: 0 25px 0 0;
+        }
+        .flow-loop-arrow::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 8px solid var(--accent);
+            transform: rotate(-45deg);
+        }
+        .flow-detail {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            display: none;
+        }
+        .flow-detail.show { display: block; }
+        .flow-detail h5 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .flow-detail p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        .code-block {
+            background: var(--code-bg);
+            border-radius: var(--radius-sm);
+            margin: 16px 0;
+            overflow: hidden;
+        }
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #e8e4dd;
+            font-size: 13px;
+        }
+        .code-lang {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .code-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .code-action {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .code-action:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        .code-body {
+            padding: 16px;
+            overflow-x: auto;
+        }
+        .code-body pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            white-space: pre;
+        }
+        .code-body code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .code-comment { color: #8a8a8a; }
+        .code-keyword { color: #c75b39; }
+        .code-string { color: #4a7c59; }
+        .code-function { color: #2d6a8e; }
+
+        /* ===== DEMO CARDS ===== */
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 32px 0;
+        }
+        .demo-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .demo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--accent-light);
+        }
+        .demo-card .demo-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--accent-bg);
+            color: var(--accent);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .demo-card h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .demo-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        .demo-card .demo-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .demo-detail {
+            display: none;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-light);
+        }
+        .demo-card.expanded .demo-detail { display: block; }
+
+        /* ===== CHAPTER NAV ===== */
+        .chapter-nav {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 16px 0;
+            margin-bottom: 32px;
+        }
+        .chapter-pill {
+            flex-shrink: 0;
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .chapter-pill:hover, .chapter-pill.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* ===== TABLE OF CONTENTS ===== */
+        .toc {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 40px;
+            box-shadow: var(--shadow);
+        }
+        .toc h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .toc a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--accent); }
+        .toc a .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        /* ===== TOOLTIP / ASK BUTTON ===== */
+        .ask-popup {
+            position: fixed;
+            background: var(--accent);
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            z-index: 9999;
+            display: none;
+            box-shadow: var(--shadow-hover);
+            animation: popIn 0.2s ease;
+        }
+        .ask-popup::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid var(--accent);
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== QUESTION MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--shadow-hover);
+        }
+        .modal h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .modal .selected-text {
+            background: var(--accent-bg);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            border-left: 3px solid var(--accent);
+        }
+        .modal textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 16px;
+        }
+        .modal textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* ===== COMPARISON TABLE ===== */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 14px;
+        }
+        .compare-table th {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+        .compare-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-secondary);
+        }
+        .compare-table tr:hover td {
+            background: var(--bg-secondary);
+        }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+            margin: 24px 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+        }
+        .timeline-date {
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .timeline-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ===== TAGS ===== */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .tag-beginner { background: #e8f5e9; color: #2e7d32; }
+        .tag-intermediate { background: #fff3e0; color: #e65100; }
+        .tag-advanced { background: #fce4ec; color: #c62828; }
+        .tag-concept { background: #e3f2fd; color: #1565c0; }
+
+        /* ===== DIVIDER ===== */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 48px 0;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .footer a { color: var(--accent); text-decoration: none; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 32px; }
+            .hero-subtitle { font-size: 16px; }
+            .article { padding: 24px; }
+            .section { padding: 40px 16px; }
+            .nav-links { display: none; }
+            .demo-grid { grid-template-columns: 1fr; }
+            .flowchart { padding: 20px; }
+        }
+
+        /* ===== SCROLL ANIMATIONS ===== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== HIGHLIGHT ===== */
+        ::selection {
+            background: var(--accent-light);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+    <div class="nav-inner">
+        <div class="nav-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+            Loop Engineering 指南
+        </div>
+        <div class="nav-links">
+            <a href="#overview">概览</a>
+            <a href="#article">长文</a>
+            <a href="#chapters">课程</a>
+            <a href="#demos">演示</a>
+        </div>
+    </div>
+    <div class="nav-progress" id="navProgress"></div>
+</nav>
+
+<!-- Hero -->
+<header class="hero" id="overview">
+    <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+        </svg>
+        2026 年硅谷最火概念
+    </div>
+    <h1>Loop <span>Engineering</span></h1>
+    <p class="hero-subtitle">从手动提示到自动循环：AI 协作的新范式</p>
+    <p class="hero-desc">
+        一份由浅入深的系统性学习资料。无论你是产品经理、开发者，还是对 AI 充满好奇的普通人，
+        都能在这里找到属于你的学习路径。
+    </p>
+    <div class="hero-cta">
+        <a href="#article" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+            </svg>
+            开始阅读长文
+        </a>
+        <a href="#chapters" class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            进入进阶课程
+        </a>
+    </div>
+</header>
+
+<!-- Long Article -->
+<section class="section" id="article">
+    <div class="article">
+        <h2>Loop Engineering：AI 协作的下一个十年</h2>
+        
+        <p><strong>想象一下这个场景：</strong>你是一位产品经理，每天早上打开电脑，AI 已经帮你整理好了昨天的用户反馈、生成了待办事项清单、甚至起草了今天需要跟进的邮件。你不需要逐条告诉 AI "请做这个"、"请做那个"——你设计了一个系统，这个系统会自动发现工作、分配任务、检查结果，然后决定下一步该做什么。</p>
+        
+        <p>这就是 <strong>Loop Engineering</strong>（循环工程）的核心理念。</p>
+
+        <h3>从一个简单的类比开始</h3>
+        
+        <p>在理解 Loop Engineering 之前，让我们先做一个类比。</p>
+        
+        <p>假设你是一位餐厅老板。在传统的经营方式中，你每天需要亲自告诉厨师做什么菜、告诉服务员接待哪些客人、告诉采购员买什么食材——这就是<strong>手动管理</strong>。</p>
+        
+        <p>而 Loop Engineering 就像是：你设计了一套<strong>标准操作流程（SOP）</strong>。每天早上，系统会自动检查库存、根据预订情况生成菜单、分配工作任务。厨师、服务员、采购员按照流程自动运转，而你只需要在关键节点做决策和审核。</p>
+        
+        <p>在 AI 的世界里，这个"系统"就是 <strong>Loop</strong>（循环）——一个能够自主发现工作、提示 AI 代理、检查结果、记录状态的自动化流程。</p>
+
+        <h3>从 Prompt Engineering 到 Loop Engineering</h3>
+        
+        <p>要理解 Loop Engineering 为什么重要，我们需要回顾一下 AI 协作的演变历程。</p>
+        
+        <p><strong>第一阶段：Prompt Engineering（提示工程）</strong></p>
+        <p>大约从 2022 年到 2024 年，我们与 AI 交互的主要方式是"写好提示词"。你精心构思一条指令，发送给 ChatGPT 或 Claude，它给你一个回复。然后你根据回复，再写下一个提示。这个过程就像是在和一位需要详细指导的实习生对话——每一步都需要你的参与。</p>
+        
+        <p><strong>第二阶段：Agentic Engineering（代理工程）</strong></p>
+        <p>2024 年到 2025 年，AI 代理（Agent）出现了。这些代理不仅能回答问题，还能执行操作——读取文件、运行代码、提交代码。但本质上，你仍然是在和代理进行一轮一轮的对话，每一轮都需要你的输入。</p>
+        
+        <p><strong>第三阶段：Loop Engineering（循环工程）</strong></p>
+        <p>2026 年，一个新的概念在硅谷迅速传播。它的核心思想是：<strong>你不再逐条提示 AI，而是设计一个系统来自动完成这件事。</strong></p>
+
+        <blockquote>
+            "你不应该再手动提示编码代理了。你应该设计循环来提示你的代理。"
+            <cite>—— Peter Steinberger，知名 iOS 开发者</cite>
+        </blockquote>
+
+        <blockquote>
+            "我不再手动提示 Claude 了。我运行的是循环系统。我的工作就是写循环。"
+            <cite>—— Boris Cherny，Anthropic Claude Code 负责人</cite>
+        </blockquote>
+
+        <h3>Loop Engineering 到底是什么？</h3>
+        
+        <p>用最简单的话说：<strong>Loop Engineering 是设计一个系统，让这个系统代替你来自动提示 AI 代理。</strong></p>
+        
+        <p>一个"循环"（Loop）可以被理解为一个<strong>递归目标</strong>：你定义一个目的，然后让 AI 迭代执行，直到任务真正完成。这个系统会：</p>
+        
+        <ul>
+            <li><strong>发现工作</strong>——自动扫描你的项目，找出需要处理的事项</li>
+            <li><strong>分配任务</strong>——把发现的工作交给合适的 AI 代理</li>
+            <li><strong>检查结果</strong>——验证 AI 代理的输出是否符合预期</li>
+            <li><strong>记录状态</strong>——把完成和未完成的事项记录下来</li>
+            <li><strong>决定下一步</strong>——根据当前状态，决定接下来该做什么</li>
+        </ul>
+        
+        <p>然后，这个循环会<strong>自动重复</strong>——每天、每小时，或者按照你设定的时间表运行。</p>
+
+        <h3>为什么这个概念现在才火？</h3>
+        
+        <p>Loop Engineering 的概念之所以在 2026 年爆发，是因为<strong>工具终于跟上了理念</strong>。</p>
+        
+        <p>一年前（2025 年），如果你想搭建一个 Loop，你需要写一大堆 Bash 脚本，自己维护，而且只有你自己能看懂。这门槛太高了。</p>
+        
+        <p>但现在，主流 AI 编码工具已经把 Loop 的核心组件<strong>内置到了产品里</strong>：</p>
+        
+        <ul>
+            <li><strong>Anthropic Claude Code</strong> 提供了 <code>/goal</code>、<code>/loop</code>、子代理（Sub-agents）、技能（Skills）等功能</li>
+            <li><strong>OpenAI Codex</strong> 提供了自动化（Automations）、<code>/goal</code>、子代理、工作树（Worktrees）等功能</li>
+            <li><strong>MCP（Model Context Protocol）</strong> 成为了连接 AI 与外部工具的标准协议</li>
+        </ul>
+        
+        <p>正如 Addy Osmani（Google Chrome 工程师，Loop Engineering 概念的推广者）所说：<strong>"一旦你注意到这些工具的形状是相同的，你就不会再争论哪个工具更好——你只需要设计一个无论坐在哪个工具里都能工作的循环。"</strong></p>
+
+        <h3>Loop Engineering 的六大组件</h3>
+        
+        <p>一个实用的 Loop 需要六个核心组件，外加一个记忆存储。让我用最通俗的语言解释它们：</p>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">概念</span>
+                    1. Automations（自动化）—— 循环的心跳
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>自动化是让 Loop 真正成为"循环"的关键。没有自动化，Loop 就只是你手动运行一次的任务。</p>
+                    <p>你可以把它理解为"定时任务"——比如每天早上 9 点，自动扫描昨天的 CI 失败记录、整理未解决的 Issue、生成今日待办。或者当你提交代码时，自动触发代码审查、运行测试、检查代码风格。</p>
+                    <p>在 Claude Code 中，这通过 <code>/loop</code> 命令实现；在 OpenAI Codex 中，这通过 Automations 标签页配置。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">概念</span>
+                    2. Worktrees（工作树）—— 并行不冲突
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>当你同时运行多个 AI 代理时，它们可能会修改同一个文件——这就像两个工程师同时编辑同一段代码，没有沟通，结果一团糟。</p>
+                    <p>Worktree 是 Git 的一个功能，它允许你在同一个仓库上创建多个独立的工作目录。每个代理在自己的 Worktree 里工作，互不干扰。完成后，再把修改合并回来。</p>
+                    <p>类比：就像餐厅里每个厨师有自己的操作台，不会互相抢锅。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">概念</span>
+                    3. Skills（技能）—— 项目知识编码
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>每次启动 AI 代理时，它都是"一片空白"的——它不知道你的项目用什么框架、有什么约定、之前发生过什么坑。</p>
+                    <p>Skills 就是把<strong>项目知识写成文档</strong>，让 AI 每次运行时都能读到。比如："我们使用 React + TypeScript"、"不要修改 generated/ 目录下的文件"、"提交前必须跑测试"。</p>
+                    <p>这些知识被保存在 <code>SKILL.md</code> 文件中，AI 会自动加载。这样你就不需要每次重复解释同样的事情。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">概念</span>
+                    4. Plugins / Connectors（插件与连接器）—— 接入真实世界
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>一个只能读写文件的 AI 代理，能力非常有限。Plugins 和 Connectors 让 AI 能够接入你日常使用的工具——比如读取 JIRA 上的任务、查询数据库、发送 Slack 消息、检查 Sentry 错误报告。</p>
+                    <p>这些连接器基于 <strong>MCP（Model Context Protocol）</strong> 标准，这是 2024 年底 Anthropic 推出的开放协议，现在已经被 OpenAI、Google、Microsoft 等主流厂商支持。</p>
+                    <p>类比：就像给 AI 装上了"手脚"，让它不再只是"说说而已"，而是真正能在你的工具链里操作。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">概念</span>
+                    5. Sub-agents（子代理）—— 分工与制衡
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>让写代码的 AI 自己来检查代码质量，就像让学生自己批改自己的作业——它往往会对自己太宽容。</p>
+                    <p>Sub-agents 的核心思想是<strong>"制造者"与"检查者"分离</strong>。一个代理负责写代码，另一个代理负责审查代码，还有一个代理负责写测试。它们各自独立运行，最后把结果汇总。</p>
+                    <p>在 Claude Code 中，你可以定义 <code>.claude/agents/</code> 目录下的代理角色；在 Codex 中，你可以用 <code>/spawn</code> 命令启动子代理。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">概念</span>
+                    6. Memory（持久记忆）—— 跨会话的记忆
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>AI 代理有一个致命弱点：<strong>每次会话结束后，它就会忘记一切。</strong>就像金鱼一样，7 秒记忆。</p>
+                    <p>Memory 就是解决这个问题的方法——把重要的信息保存在磁盘上（比如 Markdown 文件、Linear 看板、数据库），而不是依赖 AI 的上下文记忆。</p>
+                    <p>常见的做法包括：维护一个 <code>AGENTS.md</code> 或 <code>TODO.md</code> 文件，记录已完成和待办的事项；或者把状态同步到项目管理工具。</p>
+                    <p>这样，即使 AI 代理"失忆"了，它也能从文件中读取之前的状态，继续工作。</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>Loop Engineering 与 Prompt Engineering 的本质区别</h3>
+        
+        <table class="compare-table">
+            <tr>
+                <th>维度</th>
+                <th>Prompt Engineering</th>
+                <th>Loop Engineering</th>
+            </tr>
+            <tr>
+                <td>核心动作</td>
+                <td>优化单次手动指令</td>
+                <td>设计自动运行的系统</td>
+            </tr>
+            <tr>
+                <td>交互方式</td>
+                <td>你 → 提示 → AI → 回复 → 你</td>
+                <td>你设计系统 → 系统自动运行</td>
+            </tr>
+            <tr>
+                <td>时间维度</td>
+                <td>单次、即时</td>
+                <td>持续、周期性</td>
+            </tr>
+            <tr>
+                <td>人的角色</td>
+                <td>每次都在驾驶座上</td>
+                <td>设计路线，偶尔检查</td>
+            </tr>
+            <tr>
+                <td>杠杆点</td>
+                <td>单条提示的质量</td>
+                <td>系统设计的质量</td>
+            </tr>
+            <tr>
+                <td>适用场景</td>
+                <td>一次性任务、探索性工作</td>
+                <td>重复性工作、长期项目</td>
+            </tr>
+        </table>
+
+        <h3>Loop Engineering 不是什么？</h3>
+        
+        <p>理解一个概念的边界，和了解它本身同样重要。</p>
+        
+        <p><strong>Loop Engineering 不是"让 AI 完全自主，人什么都不管"。</strong></p>
+        
+        <p>这是一个常见的误解。Addy Osmani 反复强调：<strong>"设计循环。但像一位打算继续做工程师的人那样设计它，而不是像一位只想按'开始'按钮的人。"</strong></p>
+        
+        <p>Loop Engineering 改变了工作的<strong>形式</strong>，但没有消除人的<strong>责任</strong>。三个问题实际上会随着 Loop 变得更好而变得更加尖锐：</p>
+        
+        <ul>
+            <li><strong>验证仍然是你的责任。</strong>无人值守运行的 Loop，也会无人值守地犯错。子代理的审查只能降低风险，不能消除风险。</li>
+            <li><strong>理解力会退化。</strong>Loop 产出代码的速度越快，你实际理解这些代码的速度可能越慢。如果不主动阅读 Loop 的产出，你会逐渐失去对项目的掌控。</li>
+            <li><strong>认知投降是最危险的。</strong>当 Loop 自动运行时，很容易停止思考，接受它给的一切。Addy Osmani 称之为"认知投降"——用 Loop 来避免思考，和用 Loop 来提升思考，是同一个动作，但结果完全相反。</li>
+        </ul>
+
+        <h3>对非技术人员的意义</h3>
+        
+        <p>如果你不是程序员，Loop Engineering 对你仍然有意义。</p>
+        
+        <p>Loop Engineering 的核心思想——<strong>"设计系统，而非逐条执行"</strong>——是一种通用的工作哲学。它可以应用在任何需要重复决策和执行的领域：</p>
+        
+        <ul>
+            <li><strong>内容运营：</strong>设计一个 Loop，自动监控热点话题、生成选题建议、起草初稿、安排发布时间</li>
+            <li><strong>客户服务：</strong>设计一个 Loop，自动分类客户咨询、分配给合适的处理人、跟踪处理进度、提醒超时事项</li>
+            <li><strong>数据分析：</strong>设计一个 Loop，定期拉取数据、生成报表、标记异常、发送给相关人员</li>
+        </ul>
+        
+        <p>你不需要写代码来实现这些。越来越多的无代码/低代码工具正在集成 Loop 的理念。关键是<strong>思维方式</strong>的转变：从"我来做"到"我设计一个系统来做"。</p>
+
+        <h3>写在最后</h3>
+        
+        <p>Loop Engineering 代表了 AI 协作方式的<strong>范式转移</strong>。</p>
+        
+        <p>从手动提示每一条指令，到设计一个自动运行的系统——这个转变的杠杆效应是巨大的。正如 Boris Cherny 所说：<strong>"这不是工作变简单了，而是杠杆点转移了。"</strong></p>
+        
+        <p>但请记住：Loop 是工具，你是工程师。设计一个好的 Loop，比写一条好的 Prompt 更难——因为它要求你思考得更系统、更全面。</p>
+        
+        <p>如果你已经读到这里，你对 Loop Engineering 已经有了一个框架性的理解。接下来，你可以根据自己的角色和兴趣，选择下面的进阶课程继续深入学习。</p>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Chapters -->
+<section class="section" id="chapters">
+    <h2 class="section-title">进阶课程</h2>
+    <p class="section-subtitle">五章深入内容，从哲学到实践，从理论到代码</p>
+
+    <div class="chapter-nav">
+        <a href="#ch1" class="chapter-pill active">第1章 · 哲学与演变</a>
+        <a href="#ch2" class="chapter-pill">第2章 · 六大组件</a>
+        <a href="#ch3" class="chapter-pill">第3章 · 学术基础</a>
+        <a href="#ch4" class="chapter-pill">第4章 · 工具与代码</a>
+        <a href="#ch5" class="chapter-pill">第5章 · 设计你的 Loop</a>
+    </div>
+
+    <!-- Chapter 1 -->
+    <div class="article" id="ch1" style="margin-bottom: 40px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <span class="tag tag-beginner">入门</span>
+            <span style="color:var(--text-muted);font-size:14px;">约 10 分钟阅读</span>
+        </div>
+        <h2>第1章：Loop Engineering 的哲学与演变</h2>
+
+        <h3>1.1 从"对话"到"系统"</h3>
+        
+        <p>人类与 AI 的交互方式，正在经历第三次重大转变。</p>
+        
+        <p><strong>第一次转变：从搜索到对话（2022）</strong></p>
+        <p>ChatGPT 的发布让普通人第一次体验到"和 AI 对话"。你问一个问题，它给你一个答案。这种交互方式如此自然，以至于在短短几个月内，数亿人开始使用它。</p>
+        
+        <p><strong>第二次转变：从对话到代理（2024）</strong></p>
+        <p>AI 不再只是回答问题，它开始执行操作。Claude Code、GitHub Copilot Agent、Cursor 等工具让 AI 能够读取代码库、运行测试、提交修改。但交互方式仍然是"对话"——你发一条消息，AI 执行一系列操作，然后停下来等你下一条消息。</p>
+        
+        <p><strong>第三次转变：从代理到循环（2026）</strong></p>
+        <p>Loop Engineering 的核心洞察是：<strong>对话式的交互方式有一个根本性的瓶颈——它要求人类在每一轮都参与。</strong>当任务变得复杂、需要多轮迭代时，这个瓶颈变得非常明显。</p>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">展开</span>
+                    什么是"Open-Loop"和"Closed-Loop"？
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>这两个术语来自控制论（Cybernetics），后来被引入 AI 领域。</p>
+                    <p><strong>Open-Loop（开环）</strong>：系统执行操作，但不根据结果调整。就像你按下一个开关，灯亮了，但开关不会关心灯是否真的亮了。传统的自回归 Transformer 就是开环的——它生成一个 token，然后基于这个 token 生成下一个，但从不"回头检查"之前生成的内容是否正确。</p>
+                    <p><strong>Closed-Loop（闭环）</strong>：系统执行操作，观察结果，然后根据结果调整下一步行动。就像恒温器：它测量室温，如果太冷就打开暖气，然后继续测量，形成一个循环。Loop Engineering 就是要把 AI 的工作方式从"开环"变成"闭环"。</p>
+                    <p>2025 年底的一篇论文 <em>"Closed-Loop Transformers: Autoregressive Modeling as Iterative Latent Equilibrium"</em> 从学术角度论证了这一点：标准的 Transformer 在每个隐藏状态上只做一次前向传播，从不修正，这导致了错误在序列中累积。而"闭环 Transformer"通过迭代优化隐藏状态，直到达到自洽的平衡态，才继续生成下一个 token。</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>1.2 关键人物与里程碑</h3>
+        
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">2024 年 11 月</div>
+                <div class="timeline-title">MCP 协议发布</div>
+                <div class="timeline-desc">Anthropic 发布 Model Context Protocol，为 AI 与外部工具的连接建立开放标准。</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2025 年 2 月</div>
+                <div class="timeline-title">Harness Engineering 概念提出</div>
+                <div class="timeline-desc">Mitchell Hashimoto 提出"Harness Engineering"——围绕 AI 模型构建 harness（ harness = 模型之外的一切）。</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2025 年 10 月</div>
+                <div class="timeline-title">Claude Code Skills 发布</div>
+                <div class="timeline-desc">Anthropic 推出 Skills 功能，允许用户将项目知识编码为可复用的模块。</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 2 月</div>
+                <div class="timeline-title">Claude Code Agent Teams 发布</div>
+                <div class="timeline-desc">Anthropic 推出多代理团队功能，多个 Claude 实例可以并行协作。</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 4 月</div>
+                <div class="timeline-title">OpenAI Codex 重大更新</div>
+                <div class="timeline-desc">Codex 加入 /goal、subagents、MCP 支持，与 Claude Code 形成直接竞争。</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 6 月</div>
+                <div class="timeline-title">Loop Engineering 概念推广</div>
+                <div class="timeline-desc">Addy Osmani 发表博客文章，系统性地总结和命名了 Loop Engineering 这一范式。</div>
+            </div>
+        </div>
+
+        <h3>1.3 相关概念辨析</h3>
+        
+        <p>Loop Engineering 不是孤立存在的，它与几个相关概念紧密相连。理解它们的区别和联系，有助于更准确地定位 Loop Engineering。</p>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">展开</span>
+                    Loop Engineering vs Vibe Coding
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p><strong>Vibe Coding</strong>（氛围编程）是 2025 年流行起来的一个术语，描述的是一种"跟着感觉走"的 AI 辅助编程方式——你描述一个大致的想法，让 AI 自由发挥，不断迭代，直到"感觉对了"。</p>
+                    <p>Addy Osmani 指出，Vibe Coding 已经成为一个"行李箱术语"——人们用它描述从周末小项目到严谨的企业级开发的一切。这两者本质上是不同的。</p>
+                    <p><strong>Loop Engineering 是 Vibe Coding 的"纪律版"。</strong>当 Vibe Coding 需要持续运行、需要可重复、需要可验证时，你就需要 Loop Engineering。Loop Engineering 给 Vibe Coding 加上了结构：自动化、验证、记忆、分工。</p>
+                    <p>类比：Vibe Coding 像即兴爵士乐，Loop Engineering 像有乐谱的交响乐。两者都可以很美，但适用场景不同。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">展开</span>
+                    Loop Engineering vs Harness Engineering
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p><strong>Harness Engineering</strong> 由 Mitchell Hashimoto 在 2026 年 2 月提出，核心定义是：<em>"每当你发现代理犯了一个错误，你就花时间设计一个解决方案，让代理再也不会犯同样的错误。"</em></p>
+                    <p>一个常见的简化公式是：<code>Agent = Model + Harness</code>。Harness 是模型之外的一切：系统提示词、工具、沙箱、审查代理、重试逻辑、压缩策略。</p>
+                    <p><strong>Loop Engineering 是 Harness Engineering 的一个具体实现。</strong>Harness Engineering 回答的是"如何让代理更可靠"，Loop Engineering 回答的是"如何让代理持续自动运行"。</p>
+                    <p>Addy Osmani 把两者的关系描述为：Harness Engineering 是单个代理运行的环境，而 Loop Engineering 是运行在定时器上的 Harness，它会生成小助手，并且自我喂养。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-concept">展开</span>
+                    Loop Engineering vs Agentic Engineering
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p><strong>Agentic Engineering</strong>（代理工程）是一个更广泛的术语，描述的是"让 AI 代理自主规划、编写、测试和迭代代码"的软件开发范式。</p>
+                    <p>Loop Engineering 是 Agentic Engineering 的一个<strong>子集</strong>，专注于"循环"这个特定的设计模式。Agentic Engineering 还包括其他模式，比如单次代理执行、人机协作流程、多代理编排等。</p>
+                    <p>类比：Agentic Engineering 是"汽车工程"，Loop Engineering 是"自动巡航系统"。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapter 2 -->
+    <div class="article" id="ch2" style="margin-bottom: 40px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <span class="tag tag-intermediate">进阶</span>
+            <span style="color:var(--text-muted);font-size:14px;">约 15 分钟阅读</span>
+        </div>
+        <h2>第2章：六大核心组件详解</h2>
+
+        <p>这一章我们将深入探讨 Loop 的六大组件。每个组件我们都会从"是什么"、"为什么重要"、"如何工作"三个层面来理解。</p>
+
+        <h3>2.1 Automations：循环的心跳</h3>
+        
+        <p>没有自动化，Loop 就不是 Loop——它只是你手动运行一次的任务。</p>
+
+        <div class="flowchart">
+            <div class="flowchart-title">自动化 Loop 的工作流程</div>
+            <div class="flow-container" id="flow1">
+                <div class="flow-node" data-step="1" onclick="showFlowDetail(1, 'schedule')">
+                    <div class="node-label">Step 1</div>
+                    <div class="node-title">定时触发</div>
+                </div>
+                <div class="flow-arrow" data-arrow="1"></div>
+                <div class="flow-node" data-step="2" onclick="showFlowDetail(2, 'discover')">
+                    <div class="node-label">Step 2</div>
+                    <div class="node-title">发现工作</div>
+                </div>
+                <div class="flow-arrow" data-arrow="2"></div>
+                <div class="flow-node" data-step="3" onclick="showFlowDetail(3, 'triage')">
+                    <div class="node-label">Step 3</div>
+                    <div class="node-title">分类筛选</div>
+                </div>
+                <div class="flow-arrow" data-arrow="3"></div>
+                <div class="flow-node" data-step="4" onclick="showFlowDetail(4, 'assign')">
+                    <div class="node-label">Step 4</div>
+                    <div class="node-title">分配任务</div>
+                </div>
+                <div class="flow-arrow" data-arrow="4"></div>
+                <div class="flow-node" data-step="5" onclick="showFlowDetail(5, 'verify')">
+                    <div class="node-label">Step 5</div>
+                    <div class="node-title">验证结果</div>
+                </div>
+                <div class="flow-arrow" data-arrow="5"></div>
+                <div class="flow-node" data-step="6" onclick="showFlowDetail(6, 'record')">
+                    <div class="node-label">Step 6</div>
+                    <div class="node-title">记录状态</div>
+                </div>
+            </div>
+            <div class="flow-detail" id="flowDetail">
+                <h5 id="flowDetailTitle">点击上方节点查看详情</h5>
+                <p id="flowDetailText">每个步骤都可以点击，了解该步骤的具体作用。</p>
+            </div>
+        </div>
+
+        <p><strong>在 Claude Code 中：</strong></p>
+        <ul>
+            <li><code>/loop</code> 命令：按设定的时间间隔重复执行提示</li>
+            <li><code>/goal</code> 命令：持续执行，直到你设定的验证条件为真</li>
+            <li>Hooks：在代理生命周期的特定节点触发 shell 命令</li>
+            <li>GitHub Actions 集成：把 Loop 推送到云端，即使关掉电脑也能运行</li>
+        </ul>
+
+        <p><strong>在 OpenAI Codex 中：</strong></p>
+        <ul>
+            <li>Automations 标签页：选择项目、提示词、执行频率、运行环境</li>
+            <li>结果进入 Triage Inbox（分类收件箱）</li>
+            <li>没有发现问题的运行自动归档</li>
+            <li>自动化可以调用 Skill，保持可维护性</li>
+        </ul>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-advanced">深入</span>
+                    /goal 命令的底层机制
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p><code>/goal</code> 是 2026 年最受关注的代理原语之一。它的工作原理是：</p>
+                    <ol>
+                        <li>你设定一个<strong>可验证的停止条件</strong>，比如"所有 test/auth 下的测试通过，且 lint 无错误"</li>
+                        <li>代理开始工作，每完成一轮，<strong>一个独立的、更小的模型</strong>会检查条件是否满足</li>
+                        <li>如果条件不满足，继续下一轮</li>
+                        <li>如果条件满足，Loop 停止，报告结果</li>
+                    </ol>
+                    <p>关键设计：<strong>检查条件的模型和做工作的模型是分离的。</strong>这避免了"自己给自己打分"的问题。做工作的模型可能会对自己的产出过于宽容，而独立的检查模型会更严格。</p>
+                    <p>类比：就像考试，出题老师和阅卷老师不能是同一个人。</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>2.2 Worktrees：并行不冲突</h3>
+        
+        <p>当你同时运行多个 AI 代理时，文件冲突是最常见的问题。两个代理同时修改同一个文件，结果往往是代码损坏。</p>
+        
+        <p><strong>Git Worktree</strong> 是 Git 的一个高级功能，它允许你在同一个仓库上创建多个独立的工作目录，每个目录对应不同的分支。这些工作目录共享同一个 Git 历史，但文件系统是隔离的。</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">Bash</span>
+                <div class="code-actions">
+                    <button class="code-action" onclick="copyCode(this)">复制</button>
+                </div>
+            </div>
+            <div class="code-body">
+                <pre><span class="code-comment"># 创建一个新的 worktree，用于代理 A 的工作</span>
+<span class="code-keyword">git</span> worktree add ../project-agent-a feature-branch-a
+
+<span class="code-comment"># 创建另一个 worktree，用于代理 B 的工作</span>
+<span class="code-keyword">git</span> worktree add ../project-agent-b feature-branch-b
+
+<span class="code-comment"># 代理 A 和代理 B 现在可以在各自的目录里独立工作</span>
+<span class="code-comment"># 互不干扰，完成后合并回主分支</span></pre>
+            </div>
+        </div>
+
+        <p><strong>在 Claude Code 中：</strong>使用 <code>--worktree</code> 标志开启独立会话，或使用 <code>isolation: worktree</code> 配置子代理。</p>
+        <p><strong>在 Codex 中：</strong>每个线程自动获得独立的 worktree，多个线程可以同时操作同一个仓库。</p>
+
+        <h3>2.3 Skills：项目知识编码</h3>
+        
+        <p>AI 代理每次启动都是"冷启动"——它不知道你的项目用什么技术栈、有什么约定、之前踩过什么坑。如果没有 Skills，你每次都需要重复解释同样的事情。</p>
+        
+        <p>Skills 的核心思想是<strong>"渐进式披露"（Progressive Disclosure）</strong>：</p>
+        <ul>
+            <li>启动时，AI 只加载所有 Skill 的<strong>名称和描述</strong>（保持上下文精简）</li>
+            <li>当 AI 判断某个 Skill 适用时，才加载该 Skill 的<strong>完整内容</strong></li>
+            <li>执行过程中，辅助文件只在<strong>需要时</strong>才加载</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">SKILL.md</span>
+                <div class="code-actions">
+                    <button class="code-action" onclick="copyCode(this)">复制</button>
+                </div>
+            </div>
+            <div class="code-body">
+                <pre>---
+name: react-component
+<span class="code-keyword">description</span>: Generate React components following our design system
+---
+
+<span class="code-comment"># React Component Skill</span>
+
+## Conventions
+- Use TypeScript with strict mode
+- Follow the shadcn/ui component pattern
+- All components must be accessible (ARIA labels)
+- Use Tailwind CSS for styling
+
+## File Structure
+- Component: <span class="code-string">`components/{ComponentName}.tsx`</span>
+- Tests: <span class="code-string">`components/{ComponentName}.test.tsx`</span>
+- Stories: <span class="code-string">`components/{ComponentName}.stories.tsx`</span>
+
+## Common Pitfalls
+- <span class="code-keyword">NEVER</span> use inline styles
+- <span class="code-keyword">ALWAYS</span> forward refs for composability
+- Check for memory leaks in useEffect</pre>
+            </div>
+        </div>
+
+        <h3>2.4 Plugins / Connectors：接入真实世界</h3>
+        
+        <p>MCP（Model Context Protocol）是连接 AI 与外部工具的开放标准。它的设计非常简洁，就像 USB-C 一样——一个标准接口，任何设备都能用。</p>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-advanced">深入</span>
+                    MCP 的技术架构
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>MCP 基于 JSON-RPC 2.0 协议，支持三种传输方式：</p>
+                    <ul>
+                        <li><strong>stdio</strong>：本地进程间通信，适合桌面代理集成</li>
+                        <li><strong>HTTP + SSE</strong>：服务器发送事件，适合远程部署</li>
+                        <li><strong>Streamable HTTP</strong>：当前互联网部署的标准</li>
+                    </ul>
+                    <p>一个 MCP Server 需要实现三个核心接口：</p>
+                    <ol>
+                        <li><strong>tools/list</strong>：列出可用的工具（函数）</li>
+                        <li><strong>tools/call</strong>：执行工具调用</li>
+                        <li><strong>resources/list</strong>（可选）：列出可读的资源</li>
+                    </ol>
+                    <p>截至 2026 年 3 月，MCP 的 SDK 月下载量达到 <strong>9700 万</strong>，注册表中有超过 <strong>17,000</strong> 个 MCP Server。它已经成为 AI 集成领域事实上的标准。</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>2.5 Sub-agents：分工与制衡</h3>
+        
+        <p>Sub-agents 是 Loop 中最有用的结构性设计。核心原则：<strong>让写代码的代理和检查代码的代理不是同一个。</strong></p>
+
+        <table class="compare-table">
+            <tr>
+                <th>代理角色</th>
+                <th>职责</th>
+                <th>推荐模型</th>
+            </tr>
+            <tr>
+                <td>Explorer（探索者）</td>
+                <td>阅读代码、理解结构、生成报告</td>
+                <td>轻量快速模型</td>
+            </tr>
+            <tr>
+                <td>Implementer（实现者）</td>
+                <td>编写代码、修改文件</td>
+                <td>主力模型</td>
+            </tr>
+            <tr>
+                <td>Tester（测试者）</td>
+                <td>编写测试、运行测试套件</td>
+                <td>主力模型</td>
+            </tr>
+            <tr>
+                <td>Reviewer（审查者）</td>
+                <td>检查代码质量、安全风险</td>
+                <td>强推理模型</td>
+            </tr>
+        </table>
+
+        <h3>2.6 Memory：跨会话的记忆</h3>
+        
+        <p>AI 代理的上下文窗口是有限的，而且每次新会话都会清空。Memory 解决的是<strong>持久化状态</strong>的问题。</p>
+        
+        <p>常见的 Memory 实现方式：</p>
+        <ul>
+            <li><strong>Markdown 文件</strong>：<code>AGENTS.md</code>、<code>TODO.md</code>、<code>PROGRESS.md</code></li>
+            <li><strong>项目管理工具</strong>：通过 MCP 连接器同步到 Linear、JIRA、Notion</li>
+            <li><strong>数据库</strong>：把状态存储在 SQLite 或 PostgreSQL 中</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">Markdown</span>
+                <div class="code-actions">
+                    <button class="code-action" onclick="copyCode(this)">复制</button>
+                </div>
+            </div>
+            <div class="code-body">
+                <pre><span class="code-comment"># AGENTS.md - 项目状态记录</span>
+
+## 当前进行中的工作
+- [ ] 重构支付模块（Issue #234）
+  - 负责人: payment-refactor-agent
+  - Worktree: ../project-payment
+  - 状态: 测试中，3/5 测试通过
+
+## 已完成
+- [x] 修复登录页面的 CSS 问题（PR #456）
+  - 验证: 所有视觉回归测试通过
+
+## 待分类
+- CI 失败: test/auth 超时（需调查）
+- 新 Issue: 用户报告导出功能异常</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapter 3 -->
+    <div class="article" id="ch3" style="margin-bottom: 40px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <span class="tag tag-advanced">高级</span>
+            <span style="color:var(--text-muted);font-size:14px;">约 12 分钟阅读</span>
+        </div>
+        <h2>第3章：学术基础与理论支撑</h2>
+
+        <p>Loop Engineering 不是凭空出现的概念，它建立在深厚的学术基础之上。理解这些理论基础，有助于你更深入地把握 Loop 的本质。</p>
+
+        <h3>3.1 Closed-Loop Transformers：从开环到闭环</h3>
+        
+        <p>2025 年底，一篇题为 <em>"Closed-Loop Transformers: Autoregressive Modeling as Iterative Latent Equilibrium"</em> 的论文提出了一个核心观点：</p>
+        
+        <blockquote>
+            当代自回归 Transformer 以开环方式运行：每个隐藏状态在单次前向传播中计算，且从不修正。这导致错误在序列中无修正地传播，是长程推理、事实一致性和多步规划失败的根本架构瓶颈。
+        </blockquote>
+
+        <p>论文提出的解决方案是<strong>"平衡 Transformer"（Equilibrium Transformer）</strong>：在生成每个 token 之前，模型通过梯度下降迭代优化隐藏状态，直到达到自洽的平衡态。</p>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-advanced">展开</span>
+                    为什么"开环"是瓶颈？
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>想象你在写一篇长文章。开环的方式就像：你写下第一句话，然后基于这句话写第二句，基于第二句写第三句……你从不回头检查第一句是否和后面的内容矛盾。</p>
+                    <p>闭环的方式就像：你写每一句话之前，都会回头检查之前写的内容，确保逻辑自洽。如果有矛盾，你会修正之前的句子。</p>
+                    <p>论文的实验表明，在二进制奇偶校验任务（测试长程依赖的经典任务）上，平衡 Transformer 在标准 Transformer 接近随机猜测的困难序列上，提升了 <strong>+8.07%</strong> 的准确率。而且，迭代优化过程收敛很快——94% 的 token 在 8 次迭代内达到平衡。</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>3.2 Test-Time Training：测试时的自我改进</h3>
+        
+        <p><strong>Test-Time Training（TTT）</strong> 是一类方法，让模型在推理过程中实时调整自己，而不需要修改预训练权重。</p>
+        
+        <p>核心思想：模型在生成答案的过程中，同时也在"学习"——它根据生成的内容计算自监督损失，然后用这个损失来更新自己的隐藏状态。</p>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-advanced">展开</span>
+                    TTT 与 Loop Engineering 的关系
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p>TTT 是在<strong>模型层面</strong>的闭环——模型自己迭代优化自己的表示。Loop Engineering 是在<strong>系统层面</strong>的闭环——你设计的系统迭代优化 AI 代理的工作流程。</p>
+                    <p>两者是互补的：</p>
+                    <ul>
+                        <li>TTT 让单个模型在推理时更聪明</li>
+                        <li>Loop Engineering 让整个系统在工作流层面更可靠</li>
+                    </ul>
+                    <p>论文指出，Equilibrium Transformer 统一了 TTT、深度平衡模型、扩散语言模型等近期进展，揭示了它们都是"闭环预测原理"的特例。</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>3.3 认知科学的启示</h3>
+        
+        <p>Loop Engineering 的理念与认知科学中的几个重要理论高度吻合：</p>
+        
+        <ul>
+            <li><strong>预测编码（Predictive Coding）</strong>：大脑通过迭代最小化预测误差来理解世界。Loop 中的"检查-修正"循环与此同构。</li>
+            <li><strong>分析-综合（Analysis-by-Synthesis）</strong>：人类在解决问题时，会在心中构建一个模型，然后验证它是否符合观察，不断迭代。</li>
+            <li><strong>全局工作空间理论（Global Workspace Theory）</strong>：意识是一个"广播系统"，信息在多个专用模块之间循环传递，直到达成共识。</li>
+        </ul>
+        
+        <p>这些联系暗示：Loop Engineering 可能不只是工程技巧，而是触及了智能的一个深层计算原理——<strong>迭代信念修正</strong>。</p>
+    </div>
+
+    <!-- Chapter 4 -->
+    <div class="article" id="ch4" style="margin-bottom: 40px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <span class="tag tag-intermediate">进阶</span>
+            <span style="color:var(--text-muted);font-size:14px;">约 15 分钟阅读</span>
+        </div>
+        <h2>第4章：工具实战与代码示例</h2>
+
+        <p>这一章我们来看 Loop Engineering 在主流工具中的具体实现。你不需要跟着操作，但你需要理解这些代码在做什么。</p>
+
+        <h3>4.1 Claude Code 的 Loop 原语</h3>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">Claude Code CLI</span>
+                <div class="code-actions">
+                    <button class="code-action" onclick="copyCode(this)">复制</button>
+                </div>
+            </div>
+            <div class="code-body">
+                <pre><span class="code-comment"># /goal: 持续工作，直到验证条件满足</span>
+<span class="code-comment"># 独立的检查模型每轮验证条件</span>
+/goal <span class="code-string">"All tests in test/auth pass and lint is clean"</span>
+
+<span class="code-comment"># /loop: 按时间表重复执行提示</span>
+<span class="code-comment"># 每个工作日早上 9 点运行</span>
+/loop <span class="code-string">"Read yesterday's CI failures and open issues, 
+       write findings to TODO.md, and draft fixes 
+       for anything labeled quick-win"</span> \
+       --schedule <span class="code-string">"0 9 * * 1-5"</span>
+
+<span class="code-comment"># 子代理：并行执行探索任务</span>
+/spawn <span class="code-string">"audit the test suite for flaky tests 
+        and report which ones share a fixture"</span>
+/spawn <span class="code-string">"review the diff against our coding-standards.md 
+        and list violations"</span></pre>
+            </div>
+        </div>
+
+        <h3>4.2 OpenAI Codex 的 Loop 原语</h3>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">Codex CLI</span>
+                <div class="code-actions">
+                    <button class="code-action" onclick="copyCode(this)">复制</button>
+                </div>
+            </div>
+            <div class="code-body">
+                <pre><span class="code-comment"># /goal: 持续运行的目标（CLI 0.128.0+）</span>
+codex /goal <span class="code-string">"Migrate the billing module to the new pricing API,
+             keep all existing tests green"</span>
+
+<span class="code-comment"># /spawn: 启动子代理并行工作</span>
+> /spawn <span class="code-string">"list every file under apps/billing that imports 
+         from apps.legacy and write the import graph"</span>
+> /spawn <span class="code-string">"grep for raw SQL strings that bypass the ORM 
+         in apps/billing and apps/payments"</span>
+> /spawn <span class="code-string">"for each test that takes more than 5 seconds, 
+         output test name + likely cause"</span>
+
+<span class="code-comment"># 父代理汇总三个子代理的报告，制定迁移计划</span></pre>
+            </div>
+        </div>
+
+        <h3>4.3 一个完整的 Loop 配置示例</h3>
+
+        <p>下面是一个典型的"每日晨间 triage"Loop 的完整配置。这个 Loop 每天早上自动运行，扫描项目状态，分配任务给子代理。</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">CLAUDE.md / AGENTS.md</span>
+                <div class="code-actions">
+                    <button class="code-action" onclick="copyCode(this)">复制</button>
+                </div>
+            </div>
+            <div class="code-body">
+                <pre><span class="code-comment"># 项目级配置：Claude Code 每次启动时读取</span>
+
+## 项目概述
+- 技术栈: Next.js 14 + TypeScript + Prisma + PostgreSQL
+- 测试框架: Vitest + Playwright
+- 代码风格: ESLint (strict) + Prettier
+
+## 工作约定
+- <span class="code-keyword">NEVER</span> 直接修改 migration 文件
+- <span class="code-keyword">ALWAYS</span> 在修改 API 后更新 OpenAPI 文档
+- 提交前必须跑 <span class="code-string">`npm run test:ci`</span>
+- 所有新功能必须有对应的 E2E 测试
+
+## 子代理配置
+- explorer: 只读权限，用于代码探索和分析
+- implementer: 读写权限，用于实现功能
+- reviewer: 只读权限，用于代码审查
+- tester: 可运行测试，用于验证</pre>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">Skill: daily-triage</span>
+                <div class="code-actions">
+                    <button class="code-action" onclick="copyCode(this)">复制</button>
+                </div>
+            </div>
+            <div class="code-body">
+                <pre>---
+name: daily-triage
+<span class="code-keyword">description</span>: Daily automated triage of project status
+---
+
+<span class="code-comment"># Daily Triage Skill</span>
+
+## Steps
+1. Read CI failures from the last 24 hours
+2. Check open issues labeled <span class="code-string">`bug`</span> or <span class="code-string">`urgent`</span>
+3. Review recent commits for potential regressions
+4. Write findings to <span class="code-string">`DAILY_TRIAGE.md`</span>
+
+## For each finding:
+- If labeled <span class="code-string">`quick-win`</span>: spawn implementer subagent
+- If complex: add to <span class="code-string">`BACKLOG.md`</span> with analysis
+- If security-related: immediately notify + spawn reviewer
+
+## Output Format
+```markdown
+## YYYY-MM-DD Triage
+### Critical (needs action today)
+- [ ] Issue #XXX: ...
+
+### This Week
+- [ ] Issue #YYY: ...
+
+### Watched
+- Issue #ZZZ: ... (monitoring)
+```</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapter 5 -->
+    <div class="article" id="ch5">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <span class="tag tag-intermediate">进阶</span>
+            <span style="color:var(--text-muted);font-size:14px;">约 12 分钟阅读</span>
+        </div>
+        <h2>第5章：设计你自己的 Loop</h2>
+
+        <p>这一章我们把前面学到的知识综合起来，学习如何设计一个有效的 Loop。我们会通过 5 个具体的演示案例来理解 Loop 的设计模式。</p>
+
+        <h3>5.1 Loop 设计原则</h3>
+        
+        <p>在设计 Loop 之前，记住 Addy Osmani 的三条核心原则：</p>
+        
+        <ol>
+            <li><strong>验证仍然是你的责任。</strong>Loop 的"完成"是一个声明，不是一个证明。子代理的审查只能降低风险。</li>
+            <li><strong>保持理解力。</strong>Loop 产出代码的速度越快，你理解这些代码的速度可能越慢。主动阅读 Loop 的产出。</li>
+            <li><strong>避免认知投降。</strong>用 Loop 来提升思考，而不是避免思考。</li>
+        </ol>
+
+        <h3>5.2 五个 Loop 演示案例</h3>
+
+        <div class="demo-grid">
+            <div class="demo-card" onclick="toggleDemo(this)">
+                <div class="demo-num">1</div>
+                <h4>每日晨间 Triage Loop</h4>
+                <p>自动扫描项目状态，分类问题，分配修复任务</p>
+                <span class="demo-tag">自动化 · 子代理</span>
+                <div class="demo-detail">
+                    <p><strong>场景：</strong>每天早上，Loop 自动运行，扫描 CI 失败、未解决的 Issue、最近的提交。</p>
+                    <p><strong>流程：</strong></p>
+                    <ol>
+                        <li>自动化触发（每天早上 9 点）</li>
+                        <li>调用 triage skill 读取项目状态</li>
+                        <li>分类：紧急 / 本周 / 观察</li>
+                        <li>对 quick-win 问题，spawn 修复子代理</li>
+                        <li>对复杂问题，写入 BACKLOG</li>
+                        <li>对安全问题，立即通知 + spawn 审查子代理</li>
+                        <li>记录状态到 DAILY_TRIAGE.md</li>
+                    </ol>
+                    <p><strong>关键设计：</strong>制造者（修复代理）和检查者（审查代理）分离。</p>
+                </div>
+            </div>
+
+            <div class="demo-card" onclick="toggleDemo(this)">
+                <div class="demo-num">2</div>
+                <h4>持续集成修复 Loop</h4>
+                <p>CI 失败时自动诊断、修复、验证</p>
+                <span class="demo-tag">/goal · 验证循环</span>
+                <div class="demo-detail">
+                    <p><strong>场景：</strong>开发者提交代码后，CI 失败。Loop 自动介入。</p>
+                    <p><strong>流程：</strong></p>
+                    <ol>
+                        <li>Hook 触发：CI 失败时通知 Loop</li>
+                        <li>Loop 读取 CI 日志，诊断失败原因</li>
+                        <li>Spawn 修复子代理（在独立 worktree 中）</li>
+                        <li>修复完成后，运行测试验证</li>
+                        <li>如果测试通过，提交 PR</li>
+                        <li>如果测试失败，把日志反馈给修复代理，继续迭代</li>
+                        <li>使用 /goal 确保"所有测试通过"才停止</li>
+                    </ol>
+                    <p><strong>关键设计：</strong>可验证的停止条件 + 失败时的自动重试。</p>
+                </div>
+            </div>
+
+            <div class="demo-card" onclick="toggleDemo(this)">
+                <div class="demo-num">3</div>
+                <h4>依赖更新 Loop</h4>
+                <p>自动检查、测试、合并依赖更新</p>
+                <span class="demo-tag">定时任务 · 安全审查</span>
+                <div class="demo-detail">
+                    <p><strong>场景：</strong>每周检查依赖更新，自动测试，安全审查后合并。</p>
+                    <p><strong>流程：</strong></p>
+                    <ol>
+                        <li>每周一早上，Loop 检查 npm outdated</li>
+                        <li>对 minor/patch 更新：spawn 测试子代理</li>
+                        <li>对 major 更新：spawn 分析子代理，评估破坏性变更</li>
+                        <li>所有更新在独立 worktree 中测试</li>
+                        <li>spawn 安全审查子代理检查漏洞</li>
+                        <li>测试通过 + 安全审查通过 → 自动提交 PR</li>
+                        <li>记录更新日志到 DEPENDENCIES.md</li>
+                    </ol>
+                    <p><strong>关键设计：</strong>风险分级（minor vs major）+ 安全审查作为强制步骤。</p>
+                </div>
+            </div>
+
+            <div class="demo-card" onclick="toggleDemo(this)">
+                <div class="demo-num">4</div>
+                <h4>文档同步 Loop</h4>
+                <p>代码变更时自动更新相关文档</p>
+                <span class="demo-tag">Hook · MCP</span>
+                <div class="demo-detail">
+                    <p><strong>场景：</strong>当 API 代码变更时，自动更新 API 文档、README、CHANGELOG。</p>
+                    <p><strong>流程：</strong></p>
+                    <ol>
+                        <li>Hook 触发：检测到 API 相关文件变更</li>
+                        <li>Spawn 分析子代理：识别变更内容</li>
+                        <li>Spawn 文档子代理：更新 OpenAPI 规范</li>
+                        <li>Spawn 更新子代理：更新 README 示例</li>
+                        <li>Spawn 更新子代理：追加 CHANGELOG</li>
+                        <li>通过 MCP 连接器同步到文档站点（如 Notion）</li>
+                        <li>人类审查后合并</li>
+                    </ol>
+                    <p><strong>关键设计：</strong>多个专业子代理并行工作 + MCP 连接器实现跨工具同步。</p>
+                </div>
+            </div>
+
+            <div class="demo-card" onclick="toggleDemo(this)">
+                <div class="demo-num">5</div>
+                <h4>代码质量监控 Loop</h4>
+                <p>持续监控代码质量指标，自动修复退化</p>
+                <span class="demo-tag">指标 · 渐进优化</span>
+                <div class="demo-detail">
+                    <p><strong>场景：</strong>持续监控测试覆盖率、复杂度、重复代码等指标。</p>
+                    <p><strong>流程：</strong></p>
+                    <ol>
+                        <li>每天运行代码质量扫描（覆盖率、复杂度、lint）</li>
+                        <li>与基线对比，识别退化</li>
+                        <li>如果覆盖率下降：spawn 测试子代理补充测试</li>
+                        <li>如果复杂度上升：spawn 重构子代理简化代码</li>
+                        <li>如果重复代码增加：spawn 提取子代理重构</li>
+                        <li>所有修改在独立 worktree 中完成</li>
+                        <li>验证指标恢复后，提交 PR</li>
+                        <li>记录质量趋势到 QUALITY.md</li>
+                    </ol>
+                    <p><strong>关键设计：</strong>指标驱动 + 渐进式优化 + 历史趋势记录。</p>
+                </div>
+            </div>
+        </div>
+
+        <h3>5.3 常见反模式</h3>
+        
+        <p>知道什么不该做，和知道什么该做同样重要。</p>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-advanced">警示</span>
+                    反模式 1：Loop 过于复杂
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p><strong>症状：</strong>一个 Loop 里嵌套了 10 个子代理，每个子代理又有自己的子代理，协调开销超过了实际工作。</p>
+                    <p><strong>解决：</strong>从简单开始。一个主代理 + 2-3 个专业子代理就足够了。只有在上下文分离能带来明确价值时，才增加子代理。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-advanced">警示</span>
+                    反模式 2：验证条件太弱
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p><strong>症状：</strong>/goal 的条件是"看起来没问题"或"代码编译通过"。Loop 很快宣布完成，但代码有严重 bug。</p>
+                    <p><strong>解决：</strong>验证条件必须是<strong>可客观验证的</strong>。比如"所有测试通过"、"lint 无错误"、"代码审查通过"。避免主观判断。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <h4>
+                    <span class="tag tag-advanced">警示</span>
+                    反模式 3：忽视 Token 成本
+                </h4>
+                <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+            <div class="accordion-body">
+                <div class="accordion-content">
+                    <p><strong>症状：</strong>Loop 每小时运行一次，每次 spawn 5 个子代理，每个子代理都用最强模型。月底账单惊人。</p>
+                    <p><strong>解决：</strong></p>
+                    <ul>
+                        <li>从慢频率开始（比如每天一次），观察产出质量</li>
+                        <li>子代理用轻量模型（如 Haiku / GPT-5.4-mini），只有关键步骤用强模型</li>
+                        <li>设置成本预算上限</li>
+                        <li>定期审查 Loop 的产出，砍掉低价值的自动化</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h3>5.4 成本管理策略</h3>
+        
+        <p>Loop Engineering 的一个现实考量是成本。多个子代理、频繁运行、强模型——这些都会消耗大量 Token。</p>
+
+        <table class="compare-table">
+            <tr>
+                <th>策略</th>
+                <th>具体做法</th>
+                <th>效果</th>
+            </tr>
+            <tr>
+                <td>模型分层</td>
+                <td>探索用轻量模型，实现用主力模型，审查用强模型</td>
+                <td>降低 60-80% 成本</td>
+            </tr>
+            <tr>
+                <td>频率控制</td>
+                <td>从每天一次开始，根据产出质量调整</td>
+                <td>避免无效运行</td>
+            </tr>
+            <tr>
+                <td>条件触发</td>
+                <td>只在检测到变化时才运行（如 CI 失败、新 Issue）</td>
+                <td>减少空转</td>
+            </tr>
+            <tr>
+                <td>上下文压缩</td>
+                <td>使用 Skills 的渐进式披露，避免加载无关内容</td>
+                <td>减少 Token 消耗</td>
+            </tr>
+            <tr>
+                <td>预算上限</td>
+                <td>设置每日/每周 Token 预算，超限自动暂停</td>
+                <td>防止意外账单</td>
+            </tr>
+        </table>
+
+        <h3>5.5 写在最后</h3>
+        
+        <p>Loop Engineering 是一个还在快速演化的领域。2026 年 6 月，这个概念刚刚被命名和系统化。未来几个月，我们可能会看到更多工具支持、更多最佳实践、更多失败教训。</p>
+        
+        <p>但核心理念是稳定的：<strong>从手动提示到系统设计，从单次交互到持续循环。</strong></p>
+        
+        <p>正如 Addy Osmani 所说：</p>
+        
+        <blockquote>
+            "设计循环。但像一位打算继续做工程师的人那样设计它，而不是像一位只想按'开始'按钮的人。"
+        </blockquote>
+        
+        <p>祝你在 Loop Engineering 的旅程中，既能享受自动化带来的效率提升，也能保持对技术的深度理解和掌控。</p>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <p>Loop Engineering 完全指南 · 2026</p>
+    <p style="margin-top:8px;">内容基于 Addy Osmani、Anthropic、OpenAI 等公开资料整理</p>
+    <p style="margin-top:16px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+            <path d="M12 6v6l4 2"/>
+        </svg>
+        选中任意文字，点击"提问"按钮，向 AI 询问更多
+    </p>
+</footer>
+
+<!-- Ask Popup -->
+<div class="ask-popup" id="askPopup" onclick="openAskModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    提问
+</div>
+
+<!-- Ask Modal -->
+<div class="modal-overlay" id="askModal" onclick="closeAskModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h3>关于这段内容的提问</h3>
+        <div class="selected-text" id="selectedText"></div>
+        <textarea id="askInput" placeholder="你想了解什么？例如：这个概念和 XXX 有什么区别？"></textarea>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeAskModal()">取消</button>
+            <button class="btn btn-primary" onclick="submitQuestion()">提交问题</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== ACCORDION =====
+function toggleAccordion(header) {
+    const accordion = header.parentElement;
+    accordion.classList.toggle('open');
+}
+
+// ===== DEMO CARDS =====
+function toggleDemo(card) {
+    card.classList.toggle('expanded');
+}
+
+// ===== FLOWCHART =====
+const flowDetails = {
+    schedule: {
+        title: 'Step 1: 定时触发',
+        text: 'Loop 按照设定的时间表启动。可以是 cron 表达式（如每天 9 点）、事件触发（如 CI 失败时）、或手动触发。这是 Loop 的"心跳"——没有定时触发，Loop 就不会自动运行。'
+    },
+    discover: {
+        title: 'Step 2: 发现工作',
+        text: 'Loop 扫描项目状态，发现需要处理的事项。这可能包括：读取 CI 日志、检查未解决的 Issue、分析最近的提交、查询监控告警等。发现阶段的目标是"不漏掉任何需要关注的事情"。'
+    },
+    triage: {
+        title: 'Step 3: 分类筛选',
+        text: '对发现的事项进行分类：紧急（需要今天处理）、重要（本周处理）、观察（持续监控）。分类标准可以是标签、优先级、影响范围等。分类的目的是确保资源投入到最有价值的地方。'
+    },
+    assign: {
+        title: 'Step 4: 分配任务',
+        text: '根据分类结果，spawn 合适的子代理来处理任务。紧急且简单的任务分配给实现代理；复杂的任务分配给分析代理；安全风险分配给审查代理。每个子代理在独立的 worktree 中工作。'
+    },
+    verify: {
+        title: 'Step 5: 验证结果',
+        text: '独立的验证代理（或 /goal 的内置检查机制）审查子代理的产出。验证条件必须是客观可检查的：测试通过、lint 干净、代码审查通过。验证不通过则反馈给实现代理继续迭代。'
+    },
+    record: {
+        title: 'Step 6: 记录状态',
+        text: '把所有完成和未完成的事项记录到持久存储（如 Markdown 文件、Linear 看板）。这样即使 AI 代理"失忆"了，下一次运行也能从上次的状态继续。记录是 Loop 能够持续运行的基础。'
+    }
+};
+
+function showFlowDetail(step, key) {
+    // Update active states
+    document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.flow-arrow').forEach(a => a.classList.remove('active'));
+    
+    for (let i = 1; i <= step; i++) {
+        document.querySelector(`.flow-node[data-step="${i}"]`)?.classList.add('active');
+        if (i < step) {
+            document.querySelector(`.flow-arrow[data-arrow="${i}"]`)?.classList.add('active');
+        }
+    }
+    
+    // Show detail
+    const detail = document.getElementById('flowDetail');
+    const detailTitle = document.getElementById('flowDetailTitle');
+    const detailText = document.getElementById('flowDetailText');
+    
+    const info = flowDetails[key];
+    if (info) {
+        detailTitle.textContent = info.title;
+        detailText.textContent = info.text;
+        detail.classList.add('show');
+    }
+}
+
+// ===== CHAPTER NAV =====
+document.querySelectorAll('.chapter-pill').forEach(pill => {
+    pill.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.chapter-pill').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+
+// ===== TEXT SELECTION / ASK =====
+let selectedText = '';
+
+function getSelectedText() {
+    const selection = window.getSelection();
+    return selection.toString().trim();
+}
+
+function getSelectionCoords() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    return {
+        x: rect.left + rect.width / 2,
+        y: rect.top - 40
+    };
+}
+
+document.addEventListener('mouseup', function() {
+    const text = getSelectedText();
+    const popup = document.getElementById('askPopup');
+    
+    if (text.length > 5 && text.length < 500) {
+        selectedText = text;
+        const coords = getSelectionCoords();
+        if (coords) {
+            popup.style.display = 'block';
+            popup.style.left = (coords.x - popup.offsetWidth / 2) + 'px';
+            popup.style.top = coords.y + 'px';
+        }
+    } else {
+        popup.style.display = 'none';
+    }
+});
+
+document.addEventListener('mousedown', function(e) {
+    const popup = document.getElementById('askPopup');
+    if (!popup.contains(e.target)) {
+        // Don't hide immediately to allow clicking the popup
+        setTimeout(() => {
+            if (!window.getSelection().toString().trim()) {
+                popup.style.display = 'none';
+            }
+        }, 10);
+    }
+});
+
+function openAskModal() {
+    document.getElementById('selectedText').textContent = selectedText;
+    document.getElementById('askModal').classList.add('show');
+    document.getElementById('askPopup').style.display = 'none';
+}
+
+function closeAskModal(event) {
+    if (!event || event.target === document.getElementById('askModal')) {
+        document.getElementById('askModal').classList.remove('show');
+    }
+}
+
+function submitQuestion() {
+    const question = document.getElementById('askInput').value.trim();
+    if (!question) return;
+    
+    // In a real implementation, this would send to an AI backend
+    alert(`问题已记录！\n\n选中的内容："${selectedText}"\n\n你的问题：${question}\n\n（在实际部署中，这里会调用 AI 来回答你的问题）`);
+    
+    document.getElementById('askInput').value = '';
+    closeAskModal();
+}
+
+// ===== COPY CODE =====
+function copyCode(btn) {
+    const codeBody = btn.closest('.code-block').querySelector('.code-body pre');
+    const text = codeBody.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = '已复制!';
+        setTimeout(() => btn.textContent = original, 2000);
+    });
+}
+
+// ===== SCROLL PROGRESS =====
+window.addEventListener('scroll', function() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = (scrollTop / docHeight) * 100;
+    document.getElementById('navProgress').style.width = progress + '%';
+});
+
+// ===== SMOOTH SCROLL FOR NAV LINKS =====
+document.querySelectorAll('.nav-links a, .hero-cta a').forEach(link => {
+    link.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (href.startsWith('#')) {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    });
+});
+
+// ===== FADE IN ON SCROLL =====
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.article, .flowchart, .demo-card, .accordion').forEach(el => {
+    el.classList.add('fade-in');
+    observer.observe(el);
+});
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function(e) {
+    // Escape to close modal
+    if (e.key === 'Escape') {
+        closeAskModal();
+    }
+});
+</script>
+
+</body>
+</html>
